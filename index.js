@@ -9,12 +9,19 @@ const k = kaboom({
     canvas: cv,
     width: window.innerWidth,
     height: window.innerHeight,
+    clearColor: [0.1, 0.05, 0, 1],
     debug: true
 });
 
 // define a scene
 k.scene("mapgen", () => {
     
+    layers([
+        "map",
+        "overlay",
+        "zeugmas"
+    ], "map")
+
     function cell_coords(col, row){
         return {
             x(){
@@ -26,10 +33,28 @@ k.scene("mapgen", () => {
         }
     }
 
+    /*
+    // Mobile Config
+    
     const ROWS = 59
     const COLS = 35
     const CELLSIZE = 25
     const PIXELS = 25
+    */
+    
+    // Desktop Config
+
+    const ROWS = 29
+    const COLS = 59
+    const CELLSIZE = 21
+    const PIXELS = 21
+    
+    add([
+        layer('overlay'),
+        color(rgba(.3,.3,.3,.95)),
+        pos(PIXELS, PIXELS),
+        rect(COLS * CELLSIZE, ROWS * CELLSIZE)
+    ])
 
     const g = new Grid(COLS, ROWS)
     const FILLED = rgb(.1,.05,0)
@@ -426,23 +451,23 @@ k.scene("mapgen", () => {
         } else if(!trimmed){
             tryTrimming()
         }
-        renderQueue.forEach(r=>{
-        every(r, c => {
-            if(g.isDirty(c.x(), c.y())){
-                if(g.isCarved(c.x(), c.y())){
-                    c.color = VERTEX
-                    g.clean(c.x(), c.y())
-                } else if(!g.isCarved(c.x(), c.y())){
-                    c.color = FILLED
-                    g.clean(c.x(), c.y())
+        console.log(ProZeugma())
+        g.renderList.forEach(r=>{
+            every(r, c => {
+                if(g.isDirty(c.x(), c.y())){
+                    if(g.isCarved(c.x(), c.y())){
+                        c.color = VERTEX
+                        g.clean(c.x(), c.y())
+                    } else if(!g.isCarved(c.x(), c.y())){
+                        c.color = FILLED
+                        g.clean(c.x(), c.y())
+                    }
                 }
-            }
-        })})
+            })
+        })
     })
 
 })
-
-var renderQueue = []
 
 // start the game
 k.start("mapgen");
@@ -490,6 +515,7 @@ class Grid {
                 this.setEdge(x, y)
             }
         }
+        this.renderList = []
     }
     getIdx(x, y){ // 
         if(x < 1){
@@ -550,12 +576,12 @@ class Grid {
     }
     dirty(x, y){
         this.unsetCell(x, y, this.CLEAN)
-        renderQueue.push(`${x}-${y}`)
+        this.renderList.push(`${x}-${y}`)
     }
     clean(x, y){
         this.setCell(x, y, this.CLEAN)
-        const i = renderQueue.indexOf(`${x}-${y}`)
-        renderQueue.splice(i, 1)
+        const i = this.renderList.indexOf(`${x}-${y}`)
+        this.renderList.splice(i, 1)
     }
     isVertex(x, y){
         return this.getCell(x, y, this.VERTEX) == this.VERTEX
@@ -574,4 +600,142 @@ class Grid {
     }
 }
 
+class faaake {
+    noun_cats = ["address", "commerce", "company", "hacker", "name", "vehicle"]
+    adj_cats = ["commerce", "company", "hacker"]
+    verb_cats = ["hacker"]
+    api_map = {
+        "address": {
+            'nouns': [
+                'city', 
+                'county', 
+                'country', 
+                'state'
+            ]
+        },
+        "commerce": {
+            "adjective": [
+                "color",
+                "productAdjective"
+            ],
+            "noun": [
+                "productName",
+                "productMaterial",
+                "product"
+            ]
+        },
+        "company": {
+            "adjective": [
+                "catchPhraseAdjective",
+                "bsAdjective"
+            ],
+            "noun": [
+                "companyName",
+                "catchPhraseNoun",
+                "bsNoun"
+            ]
+        },
+        "hacker": {
+            "adjective": [
+                "adjective"
+            ],
+            "noun": [
+                "noun"
+            ],
+            "verb": [
+                "ingverb",
+                "verb"
+            ]
+        },
+        "name": {
+            "noun": [
+                "firstName",
+                "lastName",
+                "middleName",
+                "jobTitle"
+            ]
+        },
+        "vehicle": {
+            "noun": ['vehicle']
+        }
+    }
+    constructor(cat){
+        if(cat === 'noun'){
+            this.category = choose(this.noun_cats)
+        } else if(cat === 'adjective'){
+            this.category = choose(this.adj_cats)
+        } else {
+            this.category = choose(this.verb_cats)
+        }
+        this.method = choose(this.api_map[this.category])
+        this.word = faker[this.category][this.method]()
+    }
+}
 
+class Clause {
+    possessive_pronouns = ['his', 'her']
+    constructor(elide = null){
+        this.segments = []
+        // SUBJECT
+        if(!elide === 'subject'){
+            if(rand() < .5){
+                this.segments.push(choose(this.possessive_pronouns))
+            }
+            if(rand() < .5){
+                this.segments.push(faaake('adjective'))
+            }
+            this.segments.push(faaake('noun'))
+        }
+        // VERB 
+        if(!elide === 'verb'){
+            this.segments.push(faaake('verb'))
+        }
+        // OBJECT
+        if(!elide === 'object'){
+            if(rand() < .5){
+                this.segments.push(choose(this.possessive_pronouns))
+            }
+            if(rand() < .5){
+                this.segments.push(faaake('adjective'))
+            }
+            this.segments.push(faaake('noun'))
+        }
+    }
+}
+
+class ProZeugma {
+    constructor(){
+        this.segments = []
+        // subject
+        this.num_clauses = Math.floor(rand(1, 6))
+        for(var i = 0; i < this.num_clauses; i++){
+            if(i === 0){
+                this.segments.append(Clause())
+            }
+            this.segments.append(Clause('verb'))
+            if(i != this.num_clauses - 1){
+                this.segments.append(',')
+            }
+        }
+    }
+}
+
+class HypoZeugma {
+
+}
+
+class EpiZeugma {
+
+}
+
+class MesoZeugma {
+
+}
+
+class DiaZeugma {
+
+}
+
+class HypoZeuxis {
+
+}
