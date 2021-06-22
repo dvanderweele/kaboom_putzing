@@ -52,7 +52,8 @@ k.scene("mapgen", () => {
                 rect(CELLSIZE, CELLSIZE),
                 pos(px, py),
                 color(clr),
-                cell_coords(x, y)
+                cell_coords(x, y),
+                `${x}-${y}`
             ])
             px += CELLSIZE
         }
@@ -414,7 +415,7 @@ k.scene("mapgen", () => {
     const ROOMTRIES = 100
     let tries = 0
 
-    loop(0.01, () => {
+    render(() => {
         if(tries < ROOMTRIES){
             tryPlaceRoom()
             tries++
@@ -425,7 +426,8 @@ k.scene("mapgen", () => {
         } else if(!trimmed){
             tryTrimming()
         }
-        every("cell", c => {
+        renderQueue.forEach(r=>{
+        every(r, c => {
             if(g.isDirty(c.x(), c.y())){
                 if(g.isCarved(c.x(), c.y())){
                     c.color = VERTEX
@@ -435,10 +437,12 @@ k.scene("mapgen", () => {
                     g.clean(c.x(), c.y())
                 }
             }
-        })
+        })})
     })
 
 })
+
+var renderQueue = []
 
 // start the game
 k.start("mapgen");
@@ -546,9 +550,12 @@ class Grid {
     }
     dirty(x, y){
         this.unsetCell(x, y, this.CLEAN)
+        renderQueue.push(`${x}-${y}`)
     }
     clean(x, y){
         this.setCell(x, y, this.CLEAN)
+        const i = renderQueue.indexOf(`${x}-${y}`)
+        renderQueue.splice(i, 1)
     }
     isVertex(x, y){
         return this.getCell(x, y, this.VERTEX) == this.VERTEX
