@@ -1,4 +1,4 @@
-
+alert(':<   ')
 document.querySelector('body').style.backgroundColor = '#000000'
 
 const cv = document.querySelector('#gg')
@@ -12,6 +12,35 @@ const k = kaboom({
     clearColor: [0.1, 0.05, 0, 1],
     debug: true
 });
+
+loadSprite('myguy', './Character_01.png', {
+    sliceX: 4,
+    sliceY: 4,
+    anims: {
+        walk_up: {
+            from: 0,
+            to: 3
+        },
+        walk_down: {
+            from: 4,
+            to: 7
+        },
+        walk_right: {
+            from: 8,
+            to: 11
+        },
+        walk_left: {
+            from: 12,
+            to: 15
+        }
+    }
+})
+loadSprite('carved', './Carved_01.png')
+loadSprite('uncarved', './Uncarved_01.png')
+
+k.scene("dynamic__explorer", () => {
+
+})
 
 // define a scene
 k.scene("mapgen", () => {
@@ -451,7 +480,8 @@ k.scene("mapgen", () => {
         } else if(!trimmed){
             tryTrimming()
         }
-        console.log(ProZeugma())
+        //const p = new ProZeugma()
+        alert(p.read())
         g.renderList.forEach(r=>{
             every(r, c => {
                 if(g.isDirty(c.x(), c.y())){
@@ -600,11 +630,11 @@ class Grid {
     }
 }
 
-class faaake {
-    noun_cats = ["address", "commerce", "company", "hacker", "name", "vehicle"]
-    adj_cats = ["commerce", "company", "hacker"]
-    verb_cats = ["hacker"]
-    api_map = {
+class Faaake {
+    static noun_cats = ["address", "commerce", "company", "hacker", "name", "vehicle"]
+    static adj_cats = ["commerce", "company", "hacker"]
+    static verb_cats = ["hacker"]
+    static api_map = {
         "address": {
             'nouns': [
                 'city', 
@@ -661,45 +691,48 @@ class faaake {
     }
     constructor(cat){
         if(cat === 'noun'){
-            this.category = choose(this.noun_cats)
+            this.category = choose(Faaake.noun_cats)
         } else if(cat === 'adjective'){
-            this.category = choose(this.adj_cats)
+            this.category = choose(Faaake.adj_cats)
         } else {
-            this.category = choose(this.verb_cats)
+            this.category = choose(Faaake.verb_cats)
         }
-        this.method = choose(this.api_map[this.category])
+        this.method = choose(Faaake.api_map[this.category][cat])
         this.word = faker[this.category][this.method]()
     }
 }
 
 class Clause {
-    possessive_pronouns = ['his', 'her']
+    static possessive_pronouns = ['his', 'her']
     constructor(elide = null){
         this.segments = []
         // SUBJECT
-        if(!elide === 'subject'){
+        if(elide != 'subject'){
             if(rand() < .5){
-                this.segments.push(choose(this.possessive_pronouns))
+                this.segments.push(choose(Clause.possessive_pronouns))
             }
             if(rand() < .5){
-                this.segments.push(faaake('adjective'))
+                this.segments.push(new Faaake('adjective').word)
             }
-            this.segments.push(faaake('noun'))
+            this.segments.push(new Faaake('noun').word)
         }
         // VERB 
-        if(!elide === 'verb'){
-            this.segments.push(faaake('verb'))
+        if(elide != 'verb'){
+            this.segments.push(new Faaake('verb').word)
         }
         // OBJECT
-        if(!elide === 'object'){
+        if(elide != 'object'){
             if(rand() < .5){
-                this.segments.push(choose(this.possessive_pronouns))
+                this.segments.push(choose(Clause.possessive_pronouns))
             }
             if(rand() < .5){
-                this.segments.push(faaake('adjective'))
+                this.segments.push(new Faaake('adjective').word)
             }
-            this.segments.push(faaake('noun'))
+            this.segments.push(new Faaake('noun').word)
         }
+    }
+    read(){
+        return this.segments.join(' ')
     }
 }
 
@@ -707,16 +740,15 @@ class ProZeugma {
     constructor(){
         this.segments = []
         // subject
-        this.num_clauses = Math.floor(rand(1, 6))
+        this.num_clauses = 2
         for(var i = 0; i < this.num_clauses; i++){
             if(i === 0){
-                this.segments.append(Clause())
+                this.segments.push(new Clause().read())
             }
-            this.segments.append(Clause('verb'))
-            if(i != this.num_clauses - 1){
-                this.segments.append(',')
-            }
-        }
+            this.segments.push(new Clause('verb').read())
+    }
+    read(){
+        return this.segments.join(', ') + '.'
     }
 }
 
